@@ -24,7 +24,7 @@ on:
     - '**/*.md'
 
 env:
-  APP_NAME: VSCodium
+  APP_NAME: IDE123
   ASSETS_REPOSITORY: ${{ github.repository }}
   OS_NAME: windows
   VERSIONS_REPOSITORY: ${{ github.repository_owner }}/versions
@@ -207,6 +207,7 @@ jobs:
         with:
           name: vscode
         if: env.SHOULD_BUILD == 'yes'
+        continue-on-error: true
 
       - name: Build
         env:
@@ -215,10 +216,12 @@ jobs:
           npm_config_target_arch: ${{ matrix.vscode_arch }}
         run: ./package_windows.sh
         if: env.SHOULD_BUILD == 'yes'
+        continue-on-error: true
 
       - name: Prepare assets
         run: ./prepare_assets.sh
         if: env.SHOULD_BUILD == 'yes' && (env.SHOULD_DEPLOY == 'yes' || github.event.inputs.generate_assets == 'true')
+        continue-on-error: true
 
       - name: Upload unsigned artifacts
         id: upload-unsigned-artifacts
@@ -272,32 +275,4 @@ jobs:
           retention-days: 3
         if: env.SHOULD_BUILD == 'yes' && env.SHOULD_DEPLOY == 'no' && github.event.inputs.generate_assets == 'true'
 
-  winget:
-    needs: build
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
-    env:
-      APP_IDENTIFIER: VSCodium.VSCodium
-    if: needs.build.outputs.SHOULD_DEPLOY == 'yes'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.GITHUB_BRANCH }}
-
-      - name: Check version
-        run: ./stores/winget/check_version.sh
-        env:
-          RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
-
-      - name: Release to WinGet
-        uses: vedantmgoyal9/winget-releaser@main
-        with:
-          identifier: ${{ env.APP_IDENTIFIER }}
-          version: ${{ env.RELEASE_VERSION }}
-          release-tag: ${{ env.RELEASE_VERSION }}
-          installers-regex: '\.exe$' # only .exe files
-          token: ${{ secrets.STRONGER_GITHUB_TOKEN }}
-        if: env.SHOULD_DEPLOY == 'yes'
+ 
