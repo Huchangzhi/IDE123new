@@ -248,16 +248,19 @@ jobs:
           wait-for-completion-timeout-in-seconds: 10800
           output-artifact-directory: assets/
         if: env.SHOULD_BUILD == 'yes' && (env.SHOULD_DEPLOY == 'yes' || github.event.inputs.generate_assets == 'true')
+        continue-on-error: true
 
       - name: Prepare checksums
         run: ./prepare_checksums.sh
         if: env.SHOULD_BUILD == 'yes' && (env.SHOULD_DEPLOY == 'yes' || github.event.inputs.generate_assets == 'true')
+        continue-on-error: true
 
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./release.sh
         if: env.SHOULD_BUILD == 'yes' && env.SHOULD_DEPLOY == 'yes'
+        continue-on-error: true
 
       - name: Update versions repo
         env:
@@ -266,6 +269,7 @@ jobs:
           GITHUB_USERNAME: ${{ github.repository_owner }}
         run: ./update_version.sh
         if: env.SHOULD_BUILD == 'yes' && env.SHOULD_DEPLOY == 'yes'
+        continue-on-error: true
 
       - name: Upload assets
         uses: actions/upload-artifact@v4
